@@ -34,6 +34,8 @@ class ChatResponse(BaseModel):
 
 def load_model():
     print('load_model')
+    global tokenizer 
+    global model
     tokenizer = AutoTokenizer.from_pretrained(modelName, trust_remote_code=True)   
     model = AutoModelForSeq2SeqLM.from_pretrained(modelName, trust_remote_code=True,device_map='auto').half() 
     model = model.eval()
@@ -78,7 +80,7 @@ def chat_component(data:ChatData):
     history = convert_to_tuples(messages)
     # 在这里执行聊天逻辑，返回聊天结果  
     speak = ''
-    if len(messages) > 0 and messages[-1].role == 'user':
+    if len(messages) > 0 and (messages[-1].role == 'user' or messages[-1].role == 'system'):
         speak = messages[-1].content
     response,_ = predict(speak, max_tokens, top_p, temperature, history)
     return {'choices': [{'message':{'role':'','content':response}}]}
