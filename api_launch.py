@@ -56,7 +56,7 @@ def convert_to_tuples(data):
     user = ''
     assistant = ''
     for item in data:
-        if item.role == 'user':
+        if item.role == 'user' or item.role == 'system':
             user = item.content
         elif item.role == 'assistant':
             assistant = item.content
