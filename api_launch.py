@@ -101,7 +101,7 @@ def main(port, model_name, debug):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()  
     parser.add_argument("-p", "--port", type=int, default=8080, help="port number")
-    parser.add_argument("-m", "--model_name", type=str, default="model", help="model name")
+    parser.add_argument("-m", "--model_name", type=str, default=modelName, help="model name or model path")
     parser.add_argument("-d", "--debug", action="store_true", help="enable debug mode")
     args = parser.parse_args()  
     print(args)
