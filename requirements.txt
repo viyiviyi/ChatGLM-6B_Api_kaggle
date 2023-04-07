@@ -6,3 +6,5 @@ bitsandbytes
 accelerate 
 icetk 
 pyarrow
+uvicorn
+fastapi
