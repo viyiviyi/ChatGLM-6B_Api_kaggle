@@ -39,7 +39,7 @@ def load_model():
     global tokenizer 
     global model
     tokenizer = AutoTokenizer.from_pretrained(modelName, trust_remote_code=True)   
-    model = AutoModelForSeq2SeqLM.from_pretrained(modelName, trust_remote_code=True,device_map='auto')
+    model = AutoModel.from_pretrained(modelName, trust_remote_code=True,device_map='auto')
 
 
 MAX_TURNS = 20
