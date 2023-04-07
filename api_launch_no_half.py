@@ -40,7 +40,7 @@ def load_model():
     global model
     tokenizer = AutoTokenizer.from_pretrained(modelName, trust_remote_code=True)   
     model = AutoModelForSeq2SeqLM.from_pretrained(modelName, trust_remote_code=True,device_map='auto')
-    model = model.eval()
+
 
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
