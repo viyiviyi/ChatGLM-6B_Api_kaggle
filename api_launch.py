@@ -6,6 +6,7 @@ from transformers import AutoModel, AutoTokenizer,AutoModelForSeq2SeqLM
 import torch
 import argparse
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 # torch.cuda.empty_cache()
 modelName = "THUDM/chatglm-6b"
@@ -51,6 +52,8 @@ def predict(input, max_length, top_p, temperature, history=None):
     response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
     return (response, history)
 
+
+
 app = FastAPI()
 
 def convert_to_tuples(data):
@@ -91,12 +94,19 @@ def create_item(item:Item):
     msg = predict(input=item.msg)
     return msg
 
-def main(port, model_name, debug):
+def main(port, model_name, debug,corsOrigins):
     # 在这里编写你的代码  
     global modelName
     modelName = model_name
     if not debug:
         load_model()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=corsOrigins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     uvicorn.run(app, host="127.0.0.1", port=port)
     print('server stop')
 
@@ -105,7 +115,9 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--port", type=int, default=8080, help="port number")
     parser.add_argument("-m", "--model_name", type=str, default=modelName, help="model name or model path")
     parser.add_argument("-d", "--debug", action="store_true", help="enable debug mode")
+    parser.add_argument("-cors", "--cors", type=str, help="cors domains")
     args = parser.parse_args()  
     print(args)
-    main(args.port, args.model_name, args.debug)  
+    origins = args.cors.split()
+    main(args.port, args.model_name, args.debug,origins)  
 
