@@ -8,7 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from transformers import AutoModel, AutoTokenizer,AutoModelForSeq2SeqLM
 import torch
 
-# torch.cuda.empty_cache()
+torch.cuda.empty_cache()
+
 modelName = "THUDM/chatglm-6b"
 tokenizer = None
 model = None
