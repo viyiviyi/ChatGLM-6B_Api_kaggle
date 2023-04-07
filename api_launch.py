@@ -1,12 +1,12 @@
-
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from typing import List, Optional
 import uvicorn
-from transformers import AutoModel, AutoTokenizer,AutoModelForSeq2SeqLM
-import torch
 import argparse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from transformers import AutoModel, AutoTokenizer,AutoModelForSeq2SeqLM
+import torch
 
 # torch.cuda.empty_cache()
 modelName = "THUDM/chatglm-6b"
@@ -73,24 +73,37 @@ def convert_to_tuples(data):
 
 @app.post('/v1/chat/completions')  
 def chat_component(data:ChatData):
-    print(data)
-    messages = data.messages
-    max_tokens = data.max_tokens
-    top_p = data.top_p
-    temperature = data.temperature
-    user = data.user
-    n = data.n
-    history = convert_to_tuples(messages)
-    # 在这里执行聊天逻辑，返回聊天结果  
-    speak = ''
-    if len(messages) > 0 and (messages[-1].role == 'user' or messages[-1].role == 'system'):
-        speak = messages[-1].content
-    response,_ = predict(speak, max_tokens, top_p, temperature, history)
-    return {'choices': [{'message':{'role':'','content':response}}]}
+    try:
+        messages = data.messages
+        max_tokens = data.max_tokens
+        top_p = data.top_p
+        temperature = data.temperature
+        user = data.user
+        n = data.n
+        history = convert_to_tuples(messages)
+        # 在这里执行聊天逻辑，返回聊天结果  
+        speak = ''
+        if len(messages) > 0 and (messages[-1].role == 'user' or messages[-1].role == 'system'):
+            speak = messages[-1].content
+
+        response,_ = predict(speak, max_tokens, top_p, temperature, history)
+        return {'choices': [{'message':{'role':'','content':response}}]}
+    except Exception as e:
+        return JSONResponse(
+        status_code=500,
+        content={
+            "error": {
+                "message": str(e),
+                "type": "invalid_request_error",
+                "param": "messages",
+                "code": "error"
+            }
+        }
+    )
+
 
 @app.post("/chat")
 def create_item(item:Item):
-    print(item)
     msg = predict(input=item.msg)
     return msg
 
