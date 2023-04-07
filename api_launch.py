@@ -70,7 +70,9 @@ def main(port, model_name, debug):
     modelName = model_name
     if not debug:
         load_model()
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    print('server: http://127.0.0.1:'+str(port))
+    uvicorn.run(app, host="127.0.0.1", port=port)
+    print('server stop')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()  
