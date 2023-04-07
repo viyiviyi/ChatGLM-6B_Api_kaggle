@@ -5,7 +5,7 @@ from transformers import AutoModel, AutoTokenizer,AutoModelForSeq2SeqLM
 import torch
 
 torch.cuda.empty_cache()
-modelName = '''+modelPath+'''
+modelName = "THUDM/chatglm-6b"
 tokenizer = AutoTokenizer.from_pretrained(modelName, trust_remote_code=True) 
 model = None
 model = AutoModelForSeq2SeqLM.from_pretrained(modelName, trust_remote_code=True,device_map='auto').half() 
@@ -55,3 +55,10 @@ def chat_component(data):
     response,_ = predict(speak, max_tokens, top_p, temperature, history)
     return {'choices': [{'message':{'role':'','content':response}}]}
 
+@app.post("/chat")
+def create_item(item:Item):
+    msg = predict(input=item.msg)
+    print(msg)
+    return msg
+
+uvicorn.run(app, host="0.0.0.0", port=32337)
