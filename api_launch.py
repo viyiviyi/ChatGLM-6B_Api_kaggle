@@ -118,6 +118,6 @@ if __name__ == "__main__":
     parser.add_argument("-cors", "--cors", type=str, help="cors domains")
     args = parser.parse_args()  
     print(args)
-    origins = args.cors.split()
+    origins = args.cors.split(',')
     main(args.port, args.model_name, args.debug,origins)  
 
