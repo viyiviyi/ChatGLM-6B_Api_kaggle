@@ -3,14 +3,17 @@ from fastapi import FastAPI
 import uvicorn
 from transformers import AutoModel, AutoTokenizer,AutoModelForSeq2SeqLM
 import torch
+import argparse
 
 torch.cuda.empty_cache()
 modelName = "THUDM/chatglm-6b"
 tokenizer = None
-tokenizer = AutoTokenizer.from_pretrained(modelName, trust_remote_code=True) 
 model = None
-model = AutoModelForSeq2SeqLM.from_pretrained(modelName, trust_remote_code=True,device_map='auto').half() 
-model = model.eval()
+
+def load_model()
+    tokenizer = AutoTokenizer.from_pretrained(modelName, trust_remote_code=True)   
+    model = AutoModelForSeq2SeqLM.from_pretrained(modelName, trust_remote_code=True,device_map='auto').half() 
+    model = model.eval()
 
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
@@ -62,10 +65,12 @@ def create_item(item:Item):
     print(msg)
     return msg
 
-import argparse
-
 def main(port, model_name, debug):
     # 在这里编写你的代码  
+    global modelName
+    modelName = model_name
+    if not debug:
+        load_model()
     uvicorn.run(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
