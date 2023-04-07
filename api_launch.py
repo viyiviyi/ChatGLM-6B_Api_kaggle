@@ -6,6 +6,7 @@ import torch
 
 torch.cuda.empty_cache()
 modelName = "THUDM/chatglm-6b"
+tokenizer = None
 tokenizer = AutoTokenizer.from_pretrained(modelName, trust_remote_code=True) 
 model = None
 model = AutoModelForSeq2SeqLM.from_pretrained(modelName, trust_remote_code=True,device_map='auto').half() 
@@ -61,4 +62,18 @@ def create_item(item:Item):
     print(msg)
     return msg
 
-uvicorn.run(app, host="0.0.0.0", port=32337)
+import argparse
+
+def main(port, model_name, debug):
+    # 在这里编写你的代码  
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()  
+    parser.add_argument("-p", "--port", type=int, default=8080, help="port number")
+    parser.add_argument("-m", "--model_name", type=str, default="model", help="model name")
+    parser.add_argument("-d", "--debug", action="store_true", help="enable debug mode")
+    args = parser.parse_args()  
+
+    main(args.port, args.model_name, args.debug)  
+
