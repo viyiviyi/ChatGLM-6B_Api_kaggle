@@ -10,7 +10,7 @@ modelName = "THUDM/chatglm-6b"
 tokenizer = None
 model = None
 
-def load_model()
+def load_model():
     tokenizer = AutoTokenizer.from_pretrained(modelName, trust_remote_code=True)   
     model = AutoModelForSeq2SeqLM.from_pretrained(modelName, trust_remote_code=True,device_map='auto').half() 
     model = model.eval()
