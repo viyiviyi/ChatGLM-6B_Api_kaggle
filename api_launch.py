@@ -23,7 +23,7 @@ class ChatData(BaseModel):
     max_tokens: Optional[int] = 1024
     top_p: Optional[float] = 0.9
     temperature: Optional[float] = 0.5
-    user: Optional[str] = 'default'
+    user: Optional[str] = 'user'
     n: Optional[int] = 1
 
 class ChatCompletion(BaseModel):
