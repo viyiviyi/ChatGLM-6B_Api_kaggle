@@ -5,4 +5,4 @@
 - 同时也复制了这个项目的接口部分代码，应该有人在用了，这里我希望可以兼容[https://forum.koishi.xyz/t/topic/1075](https://forum.koishi.xyz/t/topic/1075)
 - 在kaggle部署要使用P100这个单卡gpu，否则不能用，我并不知道怎么让chatglm支持多卡推理
 
-**还没写完，临时存一下**
+- 可以copy这个笔记本体验 [ChatGLM-6B_Api_kaggle](https://github.com/viyiviyi/ChatGLM-6B_Api_kaggle)
