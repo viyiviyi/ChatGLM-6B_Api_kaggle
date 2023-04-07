@@ -60,9 +60,8 @@ def chat_component(data):
     return {'choices': [{'message':{'role':'','content':response}}]}
 
 @app.post("/chat")
-def create_item(item:Item):
-    msg = predict(input=item.msg)
-    print(msg)
+def create_item(item):
+    msg = predict(input=item['msg'])
     return msg
 
 def main(port, model_name, debug):
