@@ -125,7 +125,8 @@ def chat_component(data:ChatData):
         history = '\n\n'.join([item.content for item in messages])
         # 在这里执行聊天逻辑，返回聊天结果  
         speak = history
-        response,_ = predict(speak, max_tokens, top_p, temperature)
+        print(speak)
+        response = predict(speak, max_tokens, top_p, temperature)
         return {'choices': [{'message':{'role':'','content':response}}]}
     except Exception as e:
         return JSONResponse(
