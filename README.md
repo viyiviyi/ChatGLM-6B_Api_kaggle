@@ -6,3 +6,5 @@
 - 在kaggle部署要使用P100这个单卡gpu，否则不能用，我并不知道怎么让chatglm支持多卡推理
 
 - 可以copy这个笔记本体验 [ChatGLM-6B_Api_kaggle](https://github.com/viyiviyi/ChatGLM-6B_Api_kaggle)
+
+- api_launch_controllable.py 这个文件使用了一个不对输入chatglm的内容做预处理的方法，暂时用于测试如何让chatglm输出用户需要的内容。
