@@ -79,7 +79,7 @@ def load_model():
     global tokenizer 
     global model
     # 单独下载这个文件并往文件里插入一个不对输入和输出内容做任何预处理的方法
-    file_path = hf_hub_download(repo_id=modelPath, filename='modeling_chatglm.py')
+    file_path = hf_hub_download(repo_id=modelName, filename='modeling_chatglm.py')
     if file_path:
         insert_content_to_file(file_path, '@torch.no_grad()',new_func) 
     
@@ -125,7 +125,6 @@ def chat_component(data:ChatData):
         history = '\n\n'.join([item.content for item in messages])
         # 在这里执行聊天逻辑，返回聊天结果  
         speak = history
-        print(speak)
         response = predict(speak, max_tokens, top_p, temperature)
         return {'choices': [{'message':{'role':'','content':response}}]}
     except Exception as e:
