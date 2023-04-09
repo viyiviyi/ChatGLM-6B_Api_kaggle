@@ -122,7 +122,7 @@ def chat_component(data:ChatData):
         temperature = data.temperature
         user = data.user
         n = data.n
-        history = '\n\n'.join([item.content for item in messages]
+        history = '\n\n'.join([item.content for item in messages])
         # 在这里执行聊天逻辑，返回聊天结果  
         speak = history
         response,_ = predict(speak, max_tokens, top_p, temperature)
