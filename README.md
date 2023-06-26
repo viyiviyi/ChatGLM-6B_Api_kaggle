@@ -1,6 +1,6 @@
 # ChatGLM-6B_Api_kaggle
 在kaggle部署chatglm API，和ChatGPT api使用相同的调用方式  
-支持ChatGLM2，只需要启动时传入模型名称 (THUDM/chatglm2-6b) 即可
+支持[ChatGLM2](https://github.com/THUDM/ChatGLM2-6B)，只需要启动时传入模型名称 (THUDM/chatglm2-6b) 即可
 
 - 接口的调用方式保持和ChatGPT一致，只是有些参数是无效的，便于ChatGPT项目可以直接替换地址使用。
 - 同时也复制了这个项目的接口部分代码，应该有人在用了，这里我希望可以兼容[https://forum.koishi.xyz/t/topic/1075](https://forum.koishi.xyz/t/topic/1075)
