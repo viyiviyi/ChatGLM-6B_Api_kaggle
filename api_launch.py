@@ -102,7 +102,7 @@ def chat_component(data:ChatData):
             def event_stream():
                 for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
                     yield f"data: {json.dumps({'choices': [{'message': {'role': '', 'content': response}}]})}\n\n"
-                    time.sleep(1)  # 每秒发送一条数据
+                    time.sleep(0.1)  # 每秒发送一条数据
 
             return StreamingResponse(event_stream(), media_type='text/event-stream')
         else:
