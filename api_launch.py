@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.responses import StreamingResponse
 from typing import List, Optional
 import uvicorn
 import argparse
@@ -98,7 +99,7 @@ def chat_component(data:ChatData):
             # 以 SSE 协议响应数据
             def event_stream():
                 for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
-                    yield {'data': response}
+                    yield f"data: {json.dumps({'choices': [{'message': {'role': '', 'content': response}}])}\n\n"
                     time.sleep(1)  # 每秒发送一条数据
 
             return StreamingResponse(event_stream(), media_type='text/event-stream')
