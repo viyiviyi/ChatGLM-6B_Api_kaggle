@@ -30,7 +30,7 @@ class ChatData(BaseModel):
     temperature: Optional[float] = 0.5
     user: Optional[str] = 'user'
     n: Optional[int] = 1
-    stream: False
+    stream: Optional[bool] = False
 
 class ChatCompletion(BaseModel):
     message: Message    
