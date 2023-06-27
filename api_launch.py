@@ -27,6 +27,7 @@ class ChatData(BaseModel):
     temperature: Optional[float] = 0.5
     user: Optional[str] = 'user'
     n: Optional[int] = 1
+    stream: False
 
 class ChatCompletion(BaseModel):
     message: Message    
@@ -45,13 +46,19 @@ def load_model():
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
 
-def predict(input, max_length, top_p, temperature, history=None):
+def predict(input, max_length, top_p, temperature, history=None, stream=False):
     if not model:
         return ('测试：这是测试内容',[])
     if history is None:
         history = []
-    response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
-    return (response, history)
+    if stream:
+        # 以流的形式响应数据
+        for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
+            yield (response, history)
+    else:
+        # 一次性响应所有数据
+        response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
+        yield (response, history)
 
 
 
@@ -81,14 +88,25 @@ def chat_component(data:ChatData):
         temperature = data.temperature
         user = data.user
         n = data.n
+        stream = data.stream
         history = convert_to_tuples(messages)
         # 在这里执行聊天逻辑，返回聊天结果  
         speak = ''
         if len(messages) > 0 and (messages[-1].role == 'user' or messages[-1].role == 'system'):
             speak = messages[-1].content
+        if stream:
+            # 以 SSE 协议响应数据
+            def event_stream():
+                for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
+                    yield {'data': response}
+                    time.sleep(1)  # 每秒发送一条数据
 
-        response,_ = predict(speak, max_tokens, top_p, temperature, history)
-        return {'choices': [{'message':{'role':'','content':response}}]}
+            return StreamingResponse(event_stream(), media_type='text/event-stream')
+        else:
+            # 一次性响应所有数据
+            response, _ = next(predict(speak, max_tokens, top_p, temperature, history))
+            return {'choices': [{'message':{'role':'','content':response}}]}
+        
     except Exception as e:
         return JSONResponse(
         status_code=500,
