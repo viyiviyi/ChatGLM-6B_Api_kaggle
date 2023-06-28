@@ -56,7 +56,7 @@ def predict(input, max_length, top_p, temperature, history=None, stream=False):
             for i in range(10):
                 yield (f'测试：这是测试内容 {i}/10', [])
                 time.sleep(1)
-        else
+        else:
             return ('测试：这是测试内容',[])
     if history is None:
         history = []
