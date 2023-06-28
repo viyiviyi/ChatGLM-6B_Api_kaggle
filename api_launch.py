@@ -53,7 +53,7 @@ def predict(input, max_length, top_p, temperature, history=None, stream=False):
     if not model:
         if stream:
             for i in range(10):
-                yield (f'测试：这是测试内容 {i}/10', [])
+                yield (f'测试：这是测试内容 {i+1}/10', [])
                 time.sleep(1)
             return (None,[])
         else:

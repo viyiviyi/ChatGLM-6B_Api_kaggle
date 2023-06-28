@@ -44,7 +44,7 @@ def load_model():
     global tokenizer 
     global model
     tokenizer = AutoTokenizer.from_pretrained(modelName, trust_remote_code=True)   
-    model = AutoModel.from_pretrained(modelName, trust_remote_code=True,device_map='auto')
+    model = AutoModel.from_pretrained(modelName, trust_remote_code=True,device_map='auto').float()
 
 
 MAX_TURNS = 20
@@ -55,7 +55,7 @@ def predict(input, max_length, top_p, temperature, history=None, stream=False):
     if not model:
         if stream:
             for i in range(10):
-                yield (f'测试：这是测试内容 {i}/10', [])
+                yield (f'测试：这是测试内容 {i+1}/10', [])
                 time.sleep(1)
             return (None,[])
         else:
