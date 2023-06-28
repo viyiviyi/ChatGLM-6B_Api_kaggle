@@ -65,7 +65,7 @@ def predict(input, max_length, top_p, temperature, history=None, stream=False):
     if stream:
         # 以流的形式响应数据
         for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
-            yield (response.lstrip[len(old_response)-1:], history)
+            yield (response[len(old_response):], history)
             old_response = response
             time.sleep(0.1)
         return (None,history)
