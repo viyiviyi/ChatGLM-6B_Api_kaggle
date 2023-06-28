@@ -95,8 +95,17 @@ def convert_to_tuples(data):
             assistant = ''
     return messages
 
+async def event_stream(speak, max_tokens, top_p, temperature, history):
+    async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
+        yield {
+            "data": json.dumps({'choices': [{'delta': {'role': '', 'content': response}}]})
+        }
+    yield {
+            "data": "[DONE]"
+        }
+
 @app.post('/v1/chat/completions')  
-async def chat_component(data:ChatData):
+def chat_component(data:ChatData):
     try:
         messages = data.messages
         max_tokens = data.max_tokens
@@ -112,22 +121,14 @@ async def chat_component(data:ChatData):
             speak = messages[-1].content
         if stream:
             # 以 SSE 协议响应数据
-            async def event_stream():
-                async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
-                    yield {
-                        "data": json.dumps({'choices': [{'delta': {'role': '', 'content': response}}]})
-                    }
-                yield {
-                        "data": "[DONE]"
-                    }
-            yield EventSourceResponse(event_stream())
+            return EventSourceResponse(event_stream(speak, max_tokens, top_p, temperature, history))
         else:
             # 一次性响应所有数据
             response,_ = await predict(speak, max_tokens, top_p, temperature, history)
-            yield JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
+            return JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
         
     except Exception as e:
-        yield JSONResponse(
+        return JSONResponse(
         status_code=500,
         content={
             "error": {
