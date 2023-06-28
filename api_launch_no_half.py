@@ -44,7 +44,7 @@ def load_model():
     global tokenizer 
     global model
     tokenizer = AutoTokenizer.from_pretrained(modelName, trust_remote_code=True)   
-    model = AutoModel.from_pretrained(modelName, trust_remote_code=True,device_map='auto').float()
+    model = AutoModel.from_pretrained(modelName, trust_remote_code=True,device_map='auto').cuda()
 
 
 MAX_TURNS = 20
