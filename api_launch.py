@@ -89,7 +89,7 @@ def convert_to_tuples(data):
     return messages
 
 @app.post('/v1/chat/completions')  
-async def chat_component(data:ChatData):
+def chat_component(data:ChatData):
     try:
         messages = data.messages
         max_tokens = data.max_tokens
@@ -107,7 +107,10 @@ async def chat_component(data:ChatData):
             # 以 SSE 协议响应数据
             async def event_stream():
                 async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
-                    yield {'choices': [{'message':{'role':'','content':response}}]}
+                    yield {
+                        "event": "message",
+                        "data": json.dumps({'choices': [{'message': {'role': '', 'content': response}}]})
+                    }
                 # async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
                 #     await response.write(f"data: {json.dumps({'choices': [{'message': {'role': '', 'content': response}}]})}\n\n")
                 # await response.write_eof()
@@ -120,7 +123,7 @@ async def chat_component(data:ChatData):
 
             # await event_stream(response)
 
-            return EventSourceResponse(event_stream)
+            return EventSourceResponse(event_stream())
         else:
             # 一次性响应所有数据
             response, _ = next(predict(speak, max_tokens, top_p, temperature, history))
