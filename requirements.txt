@@ -8,3 +8,4 @@ icetk
 pyarrow
 uvicorn
 fastapi
+aiohttp
