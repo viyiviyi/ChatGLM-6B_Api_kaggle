@@ -120,11 +120,11 @@ async def chat_component(data:ChatData):
                 yield {
                         "data": "[DONE]"
                     }
-            return EventSourceResponse(event_stream())
+            yield EventSourceResponse(event_stream())
         else:
             # 一次性响应所有数据
             response,_ = await predict(speak, max_tokens, top_p, temperature, history)
-            return JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
+            yield JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
         
     except Exception as e:
         return JSONResponse(
