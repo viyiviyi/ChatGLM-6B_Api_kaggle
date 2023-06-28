@@ -121,7 +121,7 @@ async def chat_component(data:ChatData):
         else:
             # 一次性响应所有数据
             response,_ = predict(speak, max_tokens, top_p, temperature, history)
-            return {'choices': [{'message':{'role':'','content':response}}]}
+            return JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
         
     except Exception as e:
         return JSONResponse(
