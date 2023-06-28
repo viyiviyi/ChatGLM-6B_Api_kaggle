@@ -1,6 +1,7 @@
 import json
 import time
 from fastapi import FastAPI
+from aiohttp import web
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
 from typing import List, Optional
@@ -104,11 +105,20 @@ def chat_component(data:ChatData):
             speak = messages[-1].content
         if stream:
             # 以 SSE 协议响应数据
-            def event_stream():
-                for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
-                    yield f"data: {json.dumps({'choices': [{'message': {'role': '', 'content': response}}]})}\n\n"
+            async def event_stream(response):
+                async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
+                    await response.write(f"data: {json.dumps({'choices': [{'message': {'role': '', 'content': response}}]})}\n\n")
+                await response.write_eof()
 
-            return StreamingResponse(event_stream(), media_type='text/event-stream')
+            response = aiohttp.web.StreamResponse()
+            response.headers['Content-Type'] = 'text/event-stream'
+            response.headers['Cache-Control'] = 'no-cache'
+            response.headers['Connection'] = 'keep-alive'
+            await response.prepare(request)
+
+            await event_stream(response)
+
+            return response
         else:
             # 一次性响应所有数据
             response, _ = next(predict(speak, max_tokens, top_p, temperature, history))
