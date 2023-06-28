@@ -112,7 +112,7 @@ async def chat_component(data:ChatData):
         if stream:
             # 以 SSE 协议响应数据
             async def event_stream():
-                for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
+                async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
                     yield {
                         "data": json.dumps({'choices': [{'delta': {'role': '', 'content': response}}]})
                     }
