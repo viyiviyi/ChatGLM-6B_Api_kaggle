@@ -89,7 +89,7 @@ def convert_to_tuples(data):
     return messages
 
 @app.post('/v1/chat/completions')  
-async def chat_component(data:ChatData):
+def chat_component(data:ChatData):
     try:
         messages = data.messages
         max_tokens = data.max_tokens
