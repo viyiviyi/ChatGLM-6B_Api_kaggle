@@ -57,9 +57,9 @@ async def predict(input, max_length, top_p, temperature, history=None, stream=Fa
             for i in range(10):
                 yield (f'测试：这是测试内容 {i+1}/10。\n', [])
                 time.sleep(0.1)
-            return
         else:
-            return ('测试：这是测试内容',[])    
+            yield ('测试：这是测试内容',[])    
+        return
     if history is None:
         history = []
     if stream:
@@ -74,7 +74,7 @@ async def predict(input, max_length, top_p, temperature, history=None, stream=Fa
     else:
         # 一次性响应所有数据
         response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
-        return (response, history)
+        yield (response, history)
 
 
 app = FastAPI()
