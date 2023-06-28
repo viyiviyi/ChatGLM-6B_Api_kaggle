@@ -3,13 +3,12 @@ import time
 from fastapi import FastAPI
 from sse_starlette.sse import EventSourceResponse
 from fastapi.responses import JSONResponse
-from fastapi.responses import StreamingResponse
 from typing import List, Optional
 import uvicorn
 import argparse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from transformers import AutoModel, AutoTokenizer,AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer,AutoModelForSeq2SeqLM
 import torch
 
 torch.cuda.empty_cache()
@@ -90,7 +89,7 @@ def convert_to_tuples(data):
     return messages
 
 @app.post('/v1/chat/completions')  
-def chat_component(data:ChatData):
+async def chat_component(data:ChatData):
     try:
         messages = data.messages
         max_tokens = data.max_tokens
