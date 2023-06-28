@@ -3,13 +3,12 @@ import time
 from fastapi import FastAPI
 from sse_starlette.sse import EventSourceResponse
 from fastapi.responses import JSONResponse
-from fastapi.responses import StreamingResponse
 from typing import List, Optional
 import uvicorn
 import argparse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from transformers import AutoModel, AutoTokenizer,AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer,AutoModelForSeq2SeqLM
 import torch
 
 torch.cuda.empty_cache()
@@ -56,6 +55,7 @@ def predict(input, max_length, top_p, temperature, history=None, stream=False):
             for i in range(10):
                 yield (f'测试：这是测试内容 {i}/10', [])
                 time.sleep(1)
+            return (None,[])
         else:
             return ('测试：这是测试内容',[])
     if history is None:
@@ -89,7 +89,7 @@ def convert_to_tuples(data):
     return messages
 
 @app.post('/v1/chat/completions')  
-def chat_component(data:ChatData):
+async def chat_component(data:ChatData):
     try:
         messages = data.messages
         max_tokens = data.max_tokens
@@ -108,8 +108,10 @@ def chat_component(data:ChatData):
             async def event_stream():
                 for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
                     yield {
-                        "event": "message",
                         "data": json.dumps({'choices': [{'message': {'role': '', 'content': response}}]})
+                    }
+                yield {
+                        "data": "[DONE]"
                     }
             return EventSourceResponse(event_stream())
         else:
