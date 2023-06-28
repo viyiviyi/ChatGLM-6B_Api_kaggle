@@ -49,8 +49,8 @@ def load_model():
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
 
-old_response = ''
-def predict(input, max_length, top_p, temperature, history=None, stream=False):
+old_response_len = 0
+async def predict(input, max_length, top_p, temperature, history=None, stream=False):
     global old_response
     if not model:
         if stream:
@@ -66,8 +66,10 @@ def predict(input, max_length, top_p, temperature, history=None, stream=False):
         # 以流的形式响应数据
         for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
             print(response)
-            yield (response[len(old_response):], history)
-            old_response = response
+            if len(response) == old_response_len:
+                continue
+            yield (response[old_response_len:], history)
+            old_response_len = len(response)
             time.sleep(0.1)
         return (None,history)
     else:
