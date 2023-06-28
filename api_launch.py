@@ -74,6 +74,7 @@ def predict(input, max_length, top_p, temperature, history=None, stream=False):
         response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
         return (response, history)
 
+
 app = FastAPI()
 
 def convert_to_tuples(data):
