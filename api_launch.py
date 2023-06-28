@@ -56,6 +56,7 @@ def predict(input, max_length, top_p, temperature, history=None, stream=False):
             for i in range(10):
                 yield (f'测试：这是测试内容 {i}/10', [])
                 time.sleep(1)
+            return (None,[])
         else:
             return ('测试：这是测试内容',[])
     if history is None:
@@ -108,8 +109,10 @@ def chat_component(data:ChatData):
             async def event_stream():
                 for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
                     yield {
-                        "event": "message",
                         "data": json.dumps({'choices': [{'message': {'role': '', 'content': response}}]})
+                    }
+                yield {
+                        "data": "[DONE]"
                     }
             return EventSourceResponse(event_stream())
         else:
