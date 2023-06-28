@@ -49,14 +49,12 @@ def load_model():
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
 
-old_response_len = 0
 async def predict(input, max_length, top_p, temperature, history=None, stream=False):
-    global old_response
     if not model:
         if stream:
             for i in range(10):
                 yield (f'测试：这是测试内容 {i+1}/10。\n', [])
-                time.sleep(0.1)
+                time.sleep(0.2)
         else:
             yield ('测试：这是测试内容',[])    
         return
@@ -64,13 +62,16 @@ async def predict(input, max_length, top_p, temperature, history=None, stream=Fa
         history = []
     if stream:
         # 以流的形式响应数据
+        old_response_len = 0
         for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
             print(response)
             if len(response) == old_response_len:
+                time.sleep(0.1)
                 continue
-            yield (response[old_response_len:], history)
+            next_text = response[old_response_len:]
             old_response_len = len(response)
-            time.sleep(0.1)
+            yield (next_text, history)
+            
     else:
         # 一次性响应所有数据
         response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
@@ -122,7 +123,7 @@ async def chat_component(data:ChatData):
             return EventSourceResponse(event_stream())
         else:
             # 一次性响应所有数据
-            response,_ = predict(speak, max_tokens, top_p, temperature, history)
+            response,_ = await predict(speak, max_tokens, top_p, temperature, history)
             return JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
         
     except Exception as e:
