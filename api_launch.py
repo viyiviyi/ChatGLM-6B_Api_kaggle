@@ -49,7 +49,7 @@ def load_model():
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
 
-async def predict(input, max_length, top_p, temperature, history=None, stream=False):
+def predict(input, max_length, top_p, temperature, history=None, stream=False):
     if not model:
         if stream:
             for i in range(10):
@@ -96,7 +96,7 @@ def convert_to_tuples(data):
     return messages
 
 async def event_stream(speak, max_tokens, top_p, temperature, history):
-    async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
+    for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
         yield {
             "data": json.dumps({'choices': [{'delta': {'role': '', 'content': response}}]})
         }
@@ -124,7 +124,7 @@ def chat_component(data:ChatData):
             return EventSourceResponse(event_stream(speak, max_tokens, top_p, temperature, history))
         else:
             # 一次性响应所有数据
-            response,_ = await predict(speak, max_tokens, top_p, temperature, history)
+            response,_ = predict(speak, max_tokens, top_p, temperature, history)
             return JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
         
     except Exception as e:
