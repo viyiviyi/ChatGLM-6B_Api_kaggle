@@ -123,7 +123,7 @@ async def chat_component(data:ChatData):
             return EventSourceResponse(event_stream())
         else:
             # 一次性响应所有数据
-            response, _ = next(predict(speak, max_tokens, top_p, temperature, history))
+            response,_ = predict(speak, max_tokens, top_p, temperature, history)
             return {'choices': [{'message':{'role':'','content':response}}]}
         
     except Exception as e:
