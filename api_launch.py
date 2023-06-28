@@ -1,7 +1,7 @@
 import json
 import time
 from fastapi import FastAPI
-from aiohttp import web
+import aiohttp
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
 from typing import List, Optional
