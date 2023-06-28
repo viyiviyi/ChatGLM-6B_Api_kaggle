@@ -127,7 +127,7 @@ async def chat_component(data:ChatData):
             yield JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
         
     except Exception as e:
-        return JSONResponse(
+        yield JSONResponse(
         status_code=500,
         content={
             "error": {
