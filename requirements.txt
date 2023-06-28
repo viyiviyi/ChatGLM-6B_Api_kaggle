@@ -8,5 +8,4 @@ icetk
 pyarrow
 uvicorn
 fastapi
-aiohttp
-sse_response
+sse_starlette
