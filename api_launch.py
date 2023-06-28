@@ -50,7 +50,11 @@ MAX_BOXES = MAX_TURNS * 2
 
 def predict(input, max_length, top_p, temperature, history=None, stream=False):
     if not model:
-        return ('测试：这是测试内容',[])
+        if stream:
+            for i in range(10):
+                yield (f'测试：这是测试内容 {i}/10', [])
+        else
+            return ('测试：这是测试内容',[])
     if history is None:
         history = []
     if stream:
@@ -60,7 +64,7 @@ def predict(input, max_length, top_p, temperature, history=None, stream=False):
     else:
         # 一次性响应所有数据
         response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
-        yield (response, history)
+        return (response, history)
 
 
 
