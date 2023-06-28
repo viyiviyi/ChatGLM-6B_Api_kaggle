@@ -105,7 +105,7 @@ def chat_component(data:ChatData):
             speak = messages[-1].content
         if stream:
             # 以 SSE 协议响应数据
-            async def event_stream():
+            def event_stream():
                 for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
                     yield {
                         "event": "message",
