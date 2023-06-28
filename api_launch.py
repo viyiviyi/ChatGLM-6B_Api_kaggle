@@ -49,27 +49,30 @@ def load_model():
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
 
+old_response = ''
 def predict(input, max_length, top_p, temperature, history=None, stream=False):
+    global old_response
     if not model:
         if stream:
             for i in range(10):
-                yield (f'测试：这是测试内容 {i+1}/10', [])
-                time.sleep(1)
+                yield (f'测试：这是测试内容 {i+1}/10。\n', [])
+                time.sleep(0.1)
             return (None,[])
         else:
-            return ('测试：这是测试内容',[])
+            return ('测试：这是测试内容',[])    
     if history is None:
         history = []
     if stream:
         # 以流的形式响应数据
         for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
-            yield (response, history)
+            yield (response.lstrip(old_response), history)
+            old_response = response
+            time.sleep(0.1)
+        return (None,history)
     else:
         # 一次性响应所有数据
         response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
         return (response, history)
-
-
 
 app = FastAPI()
 
