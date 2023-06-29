@@ -1,11 +1,15 @@
+import json
+import time
+import asyncio
 from fastapi import FastAPI
+from sse_starlette.sse import EventSourceResponse
 from fastapi.responses import JSONResponse
 from typing import List, Optional
 import uvicorn
 import argparse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from transformers import AutoModel, AutoTokenizer,AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer,AutoModelForSeq2SeqLM
 import torch
 
 torch.cuda.empty_cache()
@@ -27,6 +31,7 @@ class ChatData(BaseModel):
     temperature: Optional[float] = 0.5
     user: Optional[str] = 'user'
     n: Optional[int] = 1
+    stream: Optional[bool] = False
 
 class ChatCompletion(BaseModel):
     message: Message    
@@ -45,14 +50,32 @@ def load_model():
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
 
-def predict(input, max_length, top_p, temperature, history=None):
+async def predict(input, max_length=None, top_p=None, temperature=None, history=None, stream=False):
     if not model:
-        return ('测试：这是测试内容',[])
+        if stream:
+            for i in range(10):
+                yield f'测试：这是测试内容 {i+1}/10。\n', []
+                await asyncio.sleep(0.2)
+        else:
+            yield '测试：这是测试内容',[]
+        return
     if history is None:
         history = []
-    response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
-    return (response, history)
-
+    if stream:
+        # 以流的形式响应数据
+        old_response_len = 0
+        next_text = ''
+        for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
+            if len(response) == old_response_len:
+                continue
+            next_text = response[old_response_len:]
+            old_response_len = len(response)
+            yield next_text, history
+            await asyncio.sleep(0.2)
+    else:
+        # 一次性响应所有数据
+        response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
+        yield response, history
 
 
 app = FastAPI()
@@ -72,8 +95,20 @@ def convert_to_tuples(data):
             assistant = ''
     return messages
 
+async def event_stream(speak, max_tokens, top_p, temperature, history):
+    async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
+        yield {
+            "data": json.dumps({'choices': [{'delta': {'role': 'assistant', 'content': response}}],'created':int(time.time()),'object':'chat.completion.chunk'})
+        }
+    yield {
+            "data": json.dumps({'choices': [{'delta': {},"finish_reason":"stop"}],'created':int(time.time()),'object':'chat.completion.chunk'})
+        }
+    yield {
+            "data": "[DONE]"
+        }
+
 @app.post('/v1/chat/completions')  
-def chat_component(data:ChatData):
+async def chat_component(data:ChatData):
     try:
         messages = data.messages
         max_tokens = data.max_tokens
@@ -81,14 +116,21 @@ def chat_component(data:ChatData):
         temperature = data.temperature
         user = data.user
         n = data.n
+        stream = data.stream
         history = convert_to_tuples(messages)
         # 在这里执行聊天逻辑，返回聊天结果  
         speak = ''
         if len(messages) > 0 and (messages[-1].role == 'user' or messages[-1].role == 'system'):
             speak = messages[-1].content
-
-        response,_ = predict(speak, max_tokens, top_p, temperature, history)
-        return {'choices': [{'message':{'role':'','content':response}}]}
+        if stream:
+            # 以 SSE 协议响应数据
+            generate = event_stream(speak, max_tokens, top_p, temperature, history)
+            return EventSourceResponse(generate, media_type="text/event-stream")
+        else:
+            # 一次性响应所有数据
+            async for response, _ in predict(speak, max_tokens, top_p, temperature, history):
+                return JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
+        
     except Exception as e:
         return JSONResponse(
         status_code=500,
@@ -104,9 +146,9 @@ def chat_component(data:ChatData):
 
 
 @app.post("/chat")
-def create_item(item:Item):
-    msg = predict(input=item.msg)
-    return msg
+async def create_item(item:Item):
+    async for msg, _ in predict(input=item.msg):
+        return msg
 
 def main(port, model_name, debug,corsOrigins):
     # 在这里编写你的代码  

@@ -1,3 +1,7 @@
+import json
+import time
+from fastapi import FastAPI
+from sse_starlette.sse import EventSourceResponse
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from typing import List, Optional
@@ -5,7 +9,7 @@ import uvicorn
 import argparse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from transformers import AutoModel, AutoTokenizer,AutoModelForSeq2SeqLM
+from transformers import AutoModel, AutoTokenizer
 import torch
 
 torch.cuda.empty_cache()
@@ -27,6 +31,7 @@ class ChatData(BaseModel):
     temperature: Optional[float] = 0.5
     user: Optional[str] = 'user'
     n: Optional[int] = 1
+    stream: Optional[bool] = False
 
 class ChatCompletion(BaseModel):
     message: Message    
@@ -39,19 +44,37 @@ def load_model():
     global tokenizer 
     global model
     tokenizer = AutoTokenizer.from_pretrained(modelName, trust_remote_code=True)   
-    model = AutoModel.from_pretrained(modelName, trust_remote_code=True,device_map='auto')
+    model = AutoModel.from_pretrained(modelName, trust_remote_code=True,device_map='auto').cuda()
 
 
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
 
-def predict(input, max_length, top_p, temperature, history=None):
+
+old_response = ''
+def predict(input, max_length, top_p, temperature, history=None, stream=False):
+    global old_response
     if not model:
-        return ('测试：这是测试内容',[])
+        if stream:
+            for i in range(10):
+                yield (f'测试：这是测试内容 {i+1}/10。\n', [])
+                time.sleep(0.1)
+            return (None,[])
+        else:
+            return ('测试：这是测试内容',[])    
     if history is None:
         history = []
-    response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
-    return (response, history)
+    if stream:
+        # 以流的形式响应数据
+        for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
+            yield (response.lstrip(old_response), history)
+            old_response = response
+            time.sleep(0.1)
+        return (None,history)
+    else:
+        # 一次性响应所有数据
+        response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
+        return (response, history)
 
 
 
@@ -73,7 +96,7 @@ def convert_to_tuples(data):
     return messages
 
 @app.post('/v1/chat/completions')  
-def chat_component(data:ChatData):
+async def chat_component(data:ChatData):
     try:
         messages = data.messages
         max_tokens = data.max_tokens
@@ -81,14 +104,28 @@ def chat_component(data:ChatData):
         temperature = data.temperature
         user = data.user
         n = data.n
+        stream = data.stream
         history = convert_to_tuples(messages)
         # 在这里执行聊天逻辑，返回聊天结果  
         speak = ''
         if len(messages) > 0 and (messages[-1].role == 'user' or messages[-1].role == 'system'):
             speak = messages[-1].content
-
-        response,_ = predict(speak, max_tokens, top_p, temperature, history)
-        return {'choices': [{'message':{'role':'','content':response}}]}
+        if stream:
+            # 以 SSE 协议响应数据
+            async def event_stream():
+                for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
+                    yield {
+                        "data": json.dumps({'choices': [{'delta': {'role': '', 'content': response}}]})
+                    }
+                yield {
+                        "data": "[DONE]"
+                    }
+            return EventSourceResponse(event_stream())
+        else:
+            # 一次性响应所有数据
+            response,_ = predict(speak, max_tokens, top_p, temperature, history)
+            return {'choices': [{'message':{'role':'','content':response}}]}
+        
     except Exception as e:
         return JSONResponse(
         status_code=500,
