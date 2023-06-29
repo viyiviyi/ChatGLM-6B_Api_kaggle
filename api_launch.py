@@ -70,7 +70,6 @@ async def predict(input, max_length=None, top_p=None, temperature=None, history=
                 continue
             next_text = response[old_response_len:]
             old_response_len = len(response)
-            print(f'next: {next_text}')
             yield next_text, history
             await asyncio.sleep(0.2)
     else:
