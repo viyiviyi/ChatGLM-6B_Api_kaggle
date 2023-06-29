@@ -69,6 +69,7 @@ async def predict(input, max_length=None, top_p=None, temperature=None, history=
             if len(response) == old_response_len:
                 continue
             next_text = response[old_response_len:]
+            print(f'old_response_len: {old_response_len} next_text: {next_text}')
             old_response_len = len(response)
             yield next_text, history
     else:
@@ -98,7 +99,7 @@ async def event_stream(speak, max_tokens, top_p, temperature, history):
     async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
         print(response)
         yield {
-            "data": json.dumps({'choices': [{'delta': {'role': 'assistant', 'content': response}}]})
+            "data": json.dumps({'choices': [{'delta': {'role': 'assistant', 'content': response}}],'created':int(time.time()),'object':'chat.completion.chunk'})
         }
     yield {
             "data": "[DONE]"
