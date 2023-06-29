@@ -49,7 +49,7 @@ def load_model():
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
 
-def predict(input, max_length=None, top_p=None, temperature=None, history=None, stream=False):
+async def predict(input, max_length=None, top_p=None, temperature=None, history=None, stream=False):
     if not model:
         if stream:
             for i in range(10):
@@ -71,7 +71,6 @@ def predict(input, max_length=None, top_p=None, temperature=None, history=None, 
             next_text = response[old_response_len:]
             old_response_len = len(response)
             yield next_text, history
-            
     else:
         # 一次性响应所有数据
         response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
@@ -96,7 +95,7 @@ def convert_to_tuples(data):
     return messages
 
 async def event_stream(speak, max_tokens, top_p, temperature, history):
-    for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
+    async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
         yield {
             "data": json.dumps({'choices': [{'delta': {'role': '', 'content': response}}]})
         }
@@ -105,7 +104,7 @@ async def event_stream(speak, max_tokens, top_p, temperature, history):
         }
 
 @app.post('/v1/chat/completions')  
-def chat_component(data:ChatData):
+async def chat_component(data:ChatData):
     try:
         messages = data.messages
         max_tokens = data.max_tokens
@@ -124,8 +123,8 @@ def chat_component(data:ChatData):
             return EventSourceResponse(event_stream(speak, max_tokens, top_p, temperature, history))
         else:
             # 一次性响应所有数据
-            response,_ = next(predict(speak, max_tokens, top_p, temperature, history))
-            return JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
+            async for response, _ in predict(speak, max_tokens, top_p, temperature, history):
+                return JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
         
     except Exception as e:
         return JSONResponse(
