@@ -141,9 +141,9 @@ async def chat_component(data:ChatData):
 
 
 @app.post("/chat")
-def create_item(item:Item):
-    msg = next(predict(input=item.msg))
-    return msg
+async def create_item(item:Item):
+    async for msg, _ in predict(input=item.msg):
+        return msg
 
 def main(port, model_name, debug,corsOrigins):
     # 在这里编写你的代码  
