@@ -49,14 +49,14 @@ def load_model():
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
 
-def predict(input, max_length, top_p, temperature, history=None, stream=False):
+def predict(input, max_length=None, top_p=None, temperature=None, history=None, stream=False):
     if not model:
         if stream:
             for i in range(10):
-                yield (f'测试：这是测试内容 {i+1}/10。\n', [])
+                yield f'测试：这是测试内容 {i+1}/10。\n', []
                 time.sleep(0.2)
         else:
-            yield ('测试：这是测试内容',[])    
+            yield '测试：这是测试内容',[]
         return
     if history is None:
         history = []
@@ -70,12 +70,12 @@ def predict(input, max_length, top_p, temperature, history=None, stream=False):
                 continue
             next_text = response[old_response_len:]
             old_response_len = len(response)
-            yield (next_text, history)
+            yield next_text, history
             
     else:
         # 一次性响应所有数据
         response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
-        yield (response, history)
+        yield response, history
 
 
 app = FastAPI()
@@ -124,7 +124,7 @@ def chat_component(data:ChatData):
             return EventSourceResponse(event_stream(speak, max_tokens, top_p, temperature, history))
         else:
             # 一次性响应所有数据
-            response,_ = predict(speak, max_tokens, top_p, temperature, history)
+            response,_ = next(predict(speak, max_tokens, top_p, temperature, history))
             return JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
         
     except Exception as e:
@@ -143,7 +143,7 @@ def chat_component(data:ChatData):
 
 @app.post("/chat")
 def create_item(item:Item):
-    msg = predict(input=item.msg)
+    msg = next(predict(input=item.msg))
     return msg
 
 def main(port, model_name, debug,corsOrigins):
