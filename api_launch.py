@@ -64,7 +64,6 @@ async def predict(input, max_length=None, top_p=None, temperature=None, history=
         # 以流的形式响应数据
         old_response_len = 0
         for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
-            print(response)
             if len(response) == old_response_len:
                 time.sleep(0.1)
                 continue
@@ -96,8 +95,9 @@ def convert_to_tuples(data):
 
 async def event_stream(speak, max_tokens, top_p, temperature, history):
     async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
+        print(response)
         yield {
-            "data": json.dumps({'choices': [{'delta': {'role': '', 'content': response}}]})
+            "data": json.dumps({'choices': [{'delta': {'role': 'assistant', 'content': response}}]})
         }
     yield {
             "data": "[DONE]"
