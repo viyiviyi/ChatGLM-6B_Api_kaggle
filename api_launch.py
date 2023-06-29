@@ -63,9 +63,10 @@ async def predict(input, max_length=None, top_p=None, temperature=None, history=
     if stream:
         # 以流的形式响应数据
         old_response_len = 0
+        next_text = ''
         for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
+            time.sleep(0.2)
             if len(response) == old_response_len:
-                time.sleep(0.1)
                 continue
             next_text = response[old_response_len:]
             old_response_len = len(response)
