@@ -66,10 +66,10 @@ async def predict(input, max_length=None, top_p=None, temperature=None, history=
         next_text = ''
         for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
             time.sleep(0.2)
-            print(f'old_response_len: {old_response_len} next_text: {next_text}')
             if len(response) == old_response_len:
                 continue
             next_text = response[old_response_len:]
+            print(f'old_response_len: {old_response_len} next_text: {next_text}')
             old_response_len = len(response)
             yield next_text, history
     else:
