@@ -1,4 +1,5 @@
 import json
+import asyncio
 import time
 from fastapi import FastAPI
 from sse_starlette.sse import EventSourceResponse
@@ -51,32 +52,45 @@ MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
 
 
-old_response = ''
-def predict(input, max_length, top_p, temperature, history=None, stream=False):
-    global old_response
+async def predict(input, max_length=None, top_p=None, temperature=None, history=None, stream=False):
     if not model:
         if stream:
             for i in range(10):
-                yield (f'测试：这是测试内容 {i+1}/10。\n', [])
-                time.sleep(0.1)
-            return (None,[])
+                yield f'测试：这是测试内容 {i+1}/10。\n', []
+                await asyncio.sleep(0.2)
         else:
-            return ('测试：这是测试内容',[])    
+            yield '测试：这是测试内容',[]
+        return
     if history is None:
         history = []
     if stream:
         # 以流的形式响应数据
+        old_response_len = 0
+        next_text = ''
         for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
-            yield (response.lstrip(old_response), history)
-            old_response = response
-            time.sleep(0.1)
-        return (None,history)
+            if len(response) == old_response_len:
+                continue
+            next_text = response[old_response_len:]
+            old_response_len = len(response)
+            yield next_text, history
+            await asyncio.sleep(0.2)
     else:
         # 一次性响应所有数据
         response, history = model.chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature)
-        return (response, history)
+        yield response, history
 
 
+async def event_stream(speak, max_tokens, top_p, temperature, history):
+    async for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
+        yield {
+            "data": json.dumps({'choices': [{'delta': {'role': 'assistant', 'content': response}}],'created':int(time.time()),'object':'chat.completion.chunk'})
+        }
+    yield {
+            "data": json.dumps({'choices': [{'delta': {},"finish_reason":"stop"}],'created':int(time.time()),'object':'chat.completion.chunk'})
+        }
+    yield {
+            "data": "[DONE]"
+        }
 
 app = FastAPI()
 
@@ -112,19 +126,12 @@ async def chat_component(data:ChatData):
             speak = messages[-1].content
         if stream:
             # 以 SSE 协议响应数据
-            async def event_stream():
-                for response, _ in predict(speak, max_tokens, top_p, temperature, history, stream=True):
-                    yield {
-                        "data": json.dumps({'choices': [{'delta': {'role': '', 'content': response}}]})
-                    }
-                yield {
-                        "data": "[DONE]"
-                    }
-            return EventSourceResponse(event_stream())
+            generate = event_stream(speak, max_tokens, top_p, temperature, history)
+            return EventSourceResponse(generate, media_type="text/event-stream")
         else:
             # 一次性响应所有数据
-            response,_ = predict(speak, max_tokens, top_p, temperature, history)
-            return {'choices': [{'message':{'role':'','content':response}}]}
+            async for response, _ in predict(speak, max_tokens, top_p, temperature, history):
+                return JSONResponse(status_code=200, content={'choices': [{'message':{'role':'','content':response}}]})
         
     except Exception as e:
         return JSONResponse(
@@ -141,9 +148,9 @@ async def chat_component(data:ChatData):
 
 
 @app.post("/chat")
-def create_item(item:Item):
-    msg = predict(input=item.msg)
-    return msg
+async def create_item(item:Item):
+    async for msg, _ in predict(input=item.msg):
+        return msg
 
 def main(port, model_name, debug,corsOrigins):
     # 在这里编写你的代码  
